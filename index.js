@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const fs = require('fs');
 const sqlite3 = require('sqlite3');
 require('dotenv').config();
+const banCommand = require('./commands/ban');
 
 let messageCount = 0;
 const messagesPerGrant = 15;
@@ -63,7 +64,19 @@ client.on('message', message => {
     const command = client.commands.get(commandName);
     if (!command) return;
     try {
-        command.execute(message, args, db);
+        banCommand.isBanned(message.author.id, db)
+            .then(isBanned => {
+                if (isBanned) {
+                    return message.reply('You are currently banned from executing commands.');
+                }
+
+                command.execute(message, args, db);
+
+            })
+            .catch(error => {
+                console.error(error);
+                return message.reply('An error occurred while checking the ban status.');
+            });
     } catch (error) {
         console.error(error);
         message.reply('An error occurred while executing the command.');
